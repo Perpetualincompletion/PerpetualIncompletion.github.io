@@ -1,0 +1,35 @@
+<html>
+	<head>
+       <script src="//unpkg.com/three"></script>
+  <script src="//unpkg.com/three-spritetext"></script>
+  <script src="//unpkg.com/3d-force-graph"></script>
+  <!--<script src="../../dist/3d-force-graph.js"></script>-->
+ <script type="text/javascript" src="graph.js"></script>
+		<title>My first three.js app</title>
+		<style>
+			body { margin: 0; }
+			canvas { display: block; }
+		</style>
+	</head>
+    
+    <body>
+		<script src="three.js"></script>
+		<script>
+var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+// create an AudioListener and add it to the camera
+var listener = new THREE.AudioListener();
+camera.add( listener );
+
+// create a global audio source
+var sound = new THREE.Audio( listener );
+
+// load a sound and set it as the Audio object's buffer
+var audioLoader = new THREE.AudioLoader();
+audioLoader.load( 'sounds/crickets.ogg', function( buffer ) {
+	sound.setBuffer( buffer );
+	sound.setLoop(true);
+	sound.setVolume(0.5);
+	sound.play();
+});
+        </script>
+    </body>

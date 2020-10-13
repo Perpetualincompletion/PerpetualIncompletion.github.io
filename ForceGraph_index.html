@@ -1,0 +1,152 @@
+<head>
+  <style> body { margin: 0; } </style>
+
+  <script src="https://unpkg.com/three"></script>
+  <script src="https://unpkg.com/three-spritetext"></script>
+  <script src="https://unpkg.com/3d-force-graph"></script>
+  <!--<script src="../../dist/3d-force-graph.js"></script>-->
+ <script type="text/javascript" src="graph.js"></script>
+    <script src="//unpkg.com/d3-octree"></script>
+  <script src="//unpkg.com/d3-force-3d"></script>
+  
+ </head>
+
+<body>
+  <div id="3d-graph"></div>
+  <script src="three.js"></script>
+<div id="3d-graph"></div>
+
+    
+<script type="module">
+
+    import * as THREE from '../build/three.module.js';
+    ///////PostPRocessing Imports/////////
+            import { EffectComposer } from './postprocessing/EffectComposer.js';
+			import { RenderPass } from './/postprocessing/RenderPass.js';
+			import { ShaderPass } from './postprocessing/ShaderPass.js';
+    import { HalftonePass } from './postprocessing/HalftonePass.js';
+
+			import { RGBShiftShader } from './shaders/RGBShiftShader.js';
+			import { DotScreenShader } from './shaders/DotScreenShader.js';
+    
+
+            import { UnrealBloomPass } from '//unpkg.com/three/examples/jsm/postprocessing/UnrealBloomPass.js';
+
+    /////////////////////////
+     var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+      
+     
+    
+    ///////////Start of our force graph parameters/properties //////////
+    
+   const elem = document.getElementById('3d-graph'); 
+    
+   const Graph = ForceGraph3D()
+   
+    //Styling the graph
+    .backgroundColor('#000000') //black= #000000  white= #FFFFFF
+    .linkColor ('#FFFFFF')
+    .linkOpacity([0.4])
+    .linkWidth (0.001)
+    .linkResolution([9])
+    .linkDirectionalParticles(0.1)
+    .linkDirectionalParticleWidth(0.09)
+        
+    /////Zoom in by mouse click///
+    .onNodeClick(node => {
+          // Aim at node from outside it
+          const distance = 40;
+          const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+        
+   //Here is the only camera instance of the code
+          Graph.cameraPosition(
+            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+            node, // lookAt ({ x, y, z })
+            4000  // ms transition duration
+                
+          );
+         })
+   
+   /////End of "on mouse click" zoom camera function//////
+   
+   ///Here we specifiy de .json dataset to construct our graph, nodes and links are drwan upon the info on the .json file////////
+    (document.getElementById('3d-graph'))
+    .jsonUrl('ArchiveImgsGeo.json') 
+   
+   
+    
+   ///Add a conditional for our node objects by group, group 1 has images, the rest only spheres:
+     
+    .nodeThreeObject(node => {
+    if ((node.group == 1)) { // this conditional is your implementation
+    // return image code
+            const obj = new THREE.Mesh(
+            new THREE.SphereGeometry(8),
+            //ideal number i think is 8
+                //new THREE.SphereGeometry(Math.random() * 8),
+            new THREE.MeshBasicMaterial({ depthWrite: false, transparent: true, opacity: 0 })
+             );
+         const imgTexture = new THREE.TextureLoader().load(node.image);
+            //alpha test added to sprite material to enable transparent pngs
+        const material = new THREE.SpriteMaterial({ map: imgTexture, alphaTest: 0.5});
+        const sprite = new THREE.Sprite(material);
+        sprite.scale.set(12, 12);
+        obj.add(sprite);
+      
+             return obj;
+  } else{
+    // return geometry code
+       const obj1 = new THREE.Mesh(
+           
+           ///random sphere diameter
+           //new THREE.SphereGeometry(Math.random() * 10),
+           
+            new THREE.SphereGeometry(0.1),
+            new THREE.MeshPhongMaterial( { color: 0xA8AEB4, flatShading: false, shininess: 1, transparent: true, opacity: 1 } )
+           
+           /*//Random color node geometries
+            new THREE.MeshLambertMaterial({
+            color: Math.round(Math.random() * Math.pow(2, 22)),
+            transparent: true,
+            opacity: 0.75
+          })*/
+       );
+          return obj1;
+    
+  };
+    
+})    
+    
+//////////////////////////////////////////////////////////////////////////////////////////////
+   
+   
+
+    // Spread nodes a little wider so they don't overlap with each other
+     Graph.d3Force('charge').strength(180);//Sweet spot number:180
+     Graph.d3Force('collide', d3.forceCollide(4)); //higher no. = spread the cluster Sweet number 4
+     Graph.d3Force('link').strength(0.3); //0.3
+    //Graph.d3Force('center').strenght(-300);
+     Graph.d3VelocityDecay([0.018]); //the more the number the less nodes stay out of the ball Sweet number 0.019
+ 
+    
+    ////Halftone RGB effects////Diasbled /////
+    const grey = new HalftonePass();
+    grey.uniforms['radius'].value = 0.002;
+    grey.uniforms['greyscale'].value = true;
+    grey.uniforms['scatter'].value = 0;
+    grey.uniforms['blending'].value = 0.52;
+    grey.uniforms[ "rotateR" ].value = 26 / ( Math.PI / 180 );
+    grey.uniforms[ "rotateG" ].value = 27 / ( Math.PI / 180 );
+    grey.uniforms[ "rotateB" ].value = 24 / ( Math.PI / 180 );
+    Graph.postProcessingComposer().addPass(grey);
+    
+    /* const RGB = new ShaderPass(RGBShiftShader);
+    RGB.uniforms[ 'amount'].value = 0.0015;
+    Graph.postProcessingComposer().addPass(RGB);*/
+    
+
+  
+</script>
+       
+    </body>
